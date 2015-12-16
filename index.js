@@ -1,10 +1,9 @@
 'use strict';
 
-//Dependencies
-var fs = require('fs'),
-    mongoose = require('mongoose'),
-    path = require('path');
-
+// Dependencies
+var fs = require('fs');
+var mongoose = require('mongoose');
+var path = require('path');
 
 /**
  * Clears a collection and inserts the given data as new documents
@@ -15,11 +14,11 @@ var fs = require('fs'),
  * @param {Function}    Callback
  */
 var load = exports.load = function(data, callback) {
-    if (typeof data == 'object') {
+    if(typeof data === 'object') {
 
         loadObject(data, callback);
 
-    } else if (typeof data == 'string') {
+    } else if(typeof data === 'string') {
 
         //Get the absolute dir path if a relative path was given
         // if (data.substr(0, 1) !== '/') {
@@ -27,11 +26,13 @@ var load = exports.load = function(data, callback) {
         //     parentPath.pop();
         //     data = parentPath.join('/') + '/' + data;
         // }
-        data = path.resolve(module.parent.filename, data)
+        data = path.resolve(module.parent.filename, data);
 
         //Determine if data is pointing to a file or directory
         fs.stat(data, function(err, stats) {
-            if (err) throw err;
+            if(err) {
+                throw err;
+            }
 
             if (stats.isDirectory()) {
                 loadDir(data, callback);
@@ -41,12 +42,9 @@ var load = exports.load = function(data, callback) {
         });
 
     } else { //Unsupported type
-
         callback(new Error('Data must be an object, array or string (file or dir path)'));
-
     }
-}
-
+};
 
 /**
  * Clears a collection and inserts the given data as new documents
@@ -69,7 +67,9 @@ function insertCollection(modelName, data, callback) {
 
     //Clear existing collection
     Model.collection.remove(function(err) {
-        if (err) return callback(err);
+        if(err) {
+            return callback(err);
+        }
 
         //Convert object to array
         var items = [];
@@ -82,7 +82,7 @@ function insertCollection(modelName, data, callback) {
         }
 
         //Check number of tasks to run
-        if (items.length == 0) {
+        if(items.length === 0) {
             return callback();
         } else {
             tasks.total = items.length;
@@ -92,16 +92,19 @@ function insertCollection(modelName, data, callback) {
         items.forEach(function(item) {
             var doc = new Model(item);
             doc.save(function(err) {
-                if (err) return callback(err);
+                if(err) {
+                    return callback(err);
+                }
 
                 //Check if task queue is complete
                 tasks.done++;
-                if (tasks.done == tasks.total) callback();
+                if(tasks.done === tasks.total) {
+                    callback();
+                }
             });
         });
     });
 }
-
 
 /**
  * Loads fixtures from object data
@@ -117,20 +120,23 @@ function loadObject(data, callback) {
     var tasks = { total: 0, done: 0 };
 
     //Go through each model's data
-    for (var modelName in data) {
+    for(var modelName in data) {
         (function() {
             tasks.total++;
 
             insertCollection(modelName, data[modelName], function(err) {
-                if (err) throw(err);
+                if(err) {
+                    throw(err);
+                }
 
                 tasks.done++;
-                if (tasks.done == tasks.total) callback();
+                if(tasks.done === tasks.total) {
+                    callback();
+                }
             });
         })();
     }
 }
-
 
 /**
  * Loads fixtures from one file
@@ -148,11 +154,10 @@ function loadFile(file, callback) {
     //     parentPath.pop();
     //     file = parentPath.join('/') + '/' + file;
     // }
-    file = path.resolve(module.parent.filename, file)
+    file = path.resolve(module.parent.filename, file);
 
     load(require(file), callback);
 }
-
 
 /**
  * Loads fixtures from all files in a directory
@@ -171,29 +176,37 @@ function loadDir(dir, callback) {
     //     parentPath.pop();
     //     dir = parentPath.join('/') + '/' + dir;
     // }
-    dir = path.resolve(module.parent.filename, dir)
+    dir = path.resolve(module.parent.filename, dir);
 
     //Counters for managing callbacks
     var tasks = { total: 0, done: 0 };
 
     //Load each file in directory
     fs.readdir(dir, function(err, files){
-        if (err) return callback(err);
+        if (err) {
+            return callback(err);
+        }
 
         tasks.total = files.length;
 
         files.forEach(function(file) {
             if(path.extname(file) === '.js') {
                 loadFile(dir + '/' + file, function(err) {
-                    if (err) return callback(err);
+                    if(err) {
+                        return callback(err);
+                    }
 
                     tasks.done++;
-                    if (tasks.total == tasks.done) callback();
+                    if(tasks.total === tasks.done) {
+                        callback();
+                    }
                 });
             } else {
                 tasks.done++;
-                if (tasks.total == tasks.done) callback();
+                if(tasks.total === tasks.done) {
+                    callback();
+                }
             }
         });
     });
-};
+}
